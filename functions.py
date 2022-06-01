@@ -7,16 +7,8 @@ def draw_lines(images, point_1, point_2, color=(255, 255, 255)):
     return cv2.line(images, point_1, point_2, color)
 
 
-def crop_image(images, convert=True):
-    height, weight, channel = images.shape
-
-    ROI = [(30, 480), (160, 80),
-           (160, 80), (480, 80),
-           (480, 80), (610, 480),
-           #(670, 480), (800, 80),
-           #(800, 80), (1120, 80),
-           #(1120, 80), (1250, 480)
-           ]
+def crop_image(images,ROI, convert=True,):
+    height, width, channel = images.shape
 
     mask = np.zeros_like(images)
     math_mask = (255,) * channel
@@ -32,7 +24,7 @@ def crop_image(images, convert=True):
 
 
 def edges(images):
-    return cv2.Canny(images, 100, 200)
+    return cv2.Canny(images, 75, 150)
 
 
 def mean_filter(image, matrix):
@@ -66,19 +58,24 @@ def brightness(image, alpha, beta):
 
 
 # color_line must be tuple to set color e.g (0,255,0) - green
+
+def white_lane_detect(image):
+    sensitivity = 100
+    lower_white = np.array([0,0,255-sensitivity])
+    upper_white = np.array([255,sensitivity,255])
+    hsv = cv2.cvtColor(image,cv2.COLOR_RGB2HSV)
+    mask = cv2.inRange(hsv,lower_white,upper_white)
+    return cv2.bitwise_and(image,image,mask = mask)
+
+
 def transform_hough(image, edges, color_line):
     # probablistic detection lines. this method use less memory than HoughLines
-    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 50, minLineLength=40, maxLineGap=50)
-    for points in lines:
-        x1, y1, x2, y2 = points[0]
-        cv2.line(image, (x1, y1), (x2, y2), color_line)
+    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 50,minLineLength=50, maxLineGap=50)
+    if lines is not None:
+        for points in lines:
+            x1, y1, x2, y2 = points[0]
+            cv2.line(image, (x1, y1), (x2, y2), color_line)
     return image
-
-#kontrast k = (Imax - imin) / (Imax + Imin)
-
-
-
-
 
 def show(name, image):
     cv2.imshow(f"{name}", image)
